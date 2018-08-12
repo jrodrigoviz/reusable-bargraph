@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script type="text/javascript" src="d3_barGraph.js"></script>
+
+
+  <body>
+    <div class="chart-container" style="max-width: 1000px;"></div>
+    <div class="button-container"></div>
+  </body>
+
+
+  <script>
+    var bar_graph = new Bar_Graph({
+      data: [{
+          "x": "A1",
+          "y": "25"
+        },
+        {
+          "x": "A2",
+          "y": "17"
+        },
+        {
+          "x": "A3",
+          "y": "10"
+        },
+        {
+          "x": "A4",
+          "y": "88"
+        },
+        {
+          "x": "A5",
+          "y": "14"
+        },
+        {
+          "x": "A6",
+          "y": "2"
+        },
+        {
+          "x": "A7",
+          "y": "3"
+        }
+      ],
+      element: document.querySelector('.chart-container')
+
+    });
+  </script>
+
+
+
+</html>
