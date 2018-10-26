@@ -311,7 +311,7 @@ Bar_Graph.prototype.showToolTip = function(d) {
     .attr("x", "0.5em")
     .style("opacity",0.9)
     .style("background", "lightgray")
-    .text(d.x + " | "+ d.y +"mm");
+    .text(d.x + " | "+ d.y);
 
   this.tooltipNode
     .transition().duration(200)
