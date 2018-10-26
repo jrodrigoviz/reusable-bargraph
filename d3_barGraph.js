@@ -2,9 +2,10 @@
 ///reusable code starts here
 ////////////////////////////////////
 
-var Bar_Graph = function(opt) {
+var Bar_Graph = function(opt,orientation='vertical') {
   this.data = opt.data;
   this.element = opt.element;
+  this.orientation = orientation;
   this.speed = 1000;
   this.colorPalette = [{
       "color": "#17becf"
@@ -66,24 +67,39 @@ Bar_Graph.prototype.draw = function() {
 };
 
 Bar_Graph.prototype.generateXScale = function() {
+  if(this.orientation=='vertical'){
   this.xScale = d3.scaleBand()
     .domain(this.data.map(function(d) {
       return d.x;
     }))
-    .range([0, this.width - 2 * this.padding]);
+    .range([0, this.width - 2 * this.padding])
+  }else if (this.orientation=='horizontal'){
+  this.xScale = d3.scaleLinear()
+    .domain([0,d3.max(this.data,function(d){
+      return d.y;
+    })*1.2])
+    .range([0, this.width - 2 * this.padding])
+  };
 
   this.xAxis = d3.axisBottom().scale(this.xScale);
-}
+};
 
 Bar_Graph.prototype.generateYScale = function() {
+  if(this.orientation =='vertical'){
   this.yScale = d3.scaleLinear()
     .domain([0, d3.max(this.data, function(d) {
-      return d.y * 1;
+      return d.y ;
     }) * 1.2])
+    .range([this.height - 2 * this.padding, 0])
+}else if(this.orientation=='horizontal'){
+  this.yScale = d3.scaleBand()
+    .domain(this.data.map(function(d) {
+      return d.x;
+    }))
     .range([this.height - 2 * this.padding, 0]);
-  this.yAxis = d3.axisLeft().scale(this.yScale);
-
 }
+    this.yAxis = d3.axisLeft().scale(this.yScale);
+};
 
 Bar_Graph.prototype.generateColorScale = function() {
   this.colorScale = d3.scaleOrdinal()
@@ -135,56 +151,103 @@ Bar_Graph.prototype.updateAxis = function() {
 
 
 Bar_Graph.prototype.generateBars = function() {
-  var that = this;
 
-  var rect = this.plot.selectAll("rect")
-    .data(this.data);
+  if(this.orientation == 'vertical'){
+      var that = this;
 
-  //remove any elements that don't have data
-  rect.exit().remove();
+      var rect = this.plot.selectAll("rect")
+        .data(this.data);
 
-  //update elements that do have Data
-  rect
-    .attr("x", function(d) {
-      return that.xScale(d.x)
-    })
-    .attr("y", this.height - 2 * this.padding)
-    .attr("height", 0) // start at "y=0" then transition to the top of the grpah while the height increases
-    .transition().duration(this.speed)
-    .attr("y", function(d) {
-      return that.yScale(d.y)
-    })
-    .attr("height", function(d) {
-      return that.height - that.yScale(d.y) - 2 * that.padding;
-    })
-    .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
-    .attr("fill", function(d) {
-      return that.colorScale(d.x)
-    })
+      //remove any elements that don't have data
+      rect.exit().remove();
 
-  //create new elements for data that is new
-  rect.enter().append("rect")
-    .attr("x", function(d) {
-      return that.xScale(d.x) + 5
-    })
-    .attr("y", this.height - 2 * this.padding)
-    .on("mouseover", function(d) {
-      that.showToolTip(d)
-    })
-    .on("mouseout", function(d) {
-      that.hideToolTip(d)
-    })
-    .transition().duration(this.speed) // start at "y=0" then transition to the top of the grpah while the height increases
-    .attr("y", function(d) {
-      return that.yScale(d.y)
-    })
-    .attr("height", function(d) {
-      return that.height - that.yScale(d.y) - 2 * that.padding;
-    })
-    .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
-    .attr("fill", function(d) {
-      return that.colorScale(d.x)
-    })
+      //update elements that do have Data
+      rect
+        .transition().duration(this.speed)
+        .attr("x", function(d) {
+          return that.xScale(d.x)
+        })
+        .attr("y", function(d) {
+          return that.yScale(d.y)
+        })
+        .attr("height", function(d) {
+          return that.height - that.yScale(d.y) - 2 * that.padding;
+        })
+        .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
+        .attr("fill", function(d) {
+          return that.colorScale(d.x)
+        })
+
+      //create new elements for data that is new
+      rect.enter().append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .on("mouseover", function(d) {
+          that.showToolTip(d)
+        })
+        .on("mouseout", function(d) {
+          that.hideToolTip(d)
+        })
+        .transition().duration(this.speed) // start at "y=0" then transition to the top of the grpah while the height increases
+        .attr("y", function(d) {
+          return that.yScale(d.y)
+        })
+        .attr("height", function(d) {
+          return that.height - that.yScale(d.y) - 2 * that.padding;
+        })
+        .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
+        .attr("fill", function(d) {
+          return that.colorScale(d.x)
+        });
+    }else if (this.orientation =='horizontal'){
+      var that = this;
+
+      var rect = this.plot.selectAll("rect")
+        .data(this.data);
+
+      //remove any elements that don't have data
+      rect.exit().remove();
+
+      //update elements that do have Data
+      rect
+        .transition().duration(this.speed)
+        .attr("x", 1)
+        .attr("y", function(d) {
+          return that.yScale(d.x)
+        })
+        .attr("height", 0.90 * (this.height - 2 * this.padding) / this.data.length)
+        .attr("width", function(d){
+        return that.xScale(d.y);
+        })
+        .attr("fill", function(d) {
+          return that.colorScale(d.x)
+        })
+
+      //create new elements for data that is new
+      rect.enter().append("rect")
+        .attr("x", 1)
+        .attr("y", function(d) {
+          return that.yScale(d.x) + 5
+        })
+        .on("mouseover", function(d) {
+          that.showToolTip(d)
+        })
+        .on("mouseout", function(d) {
+          that.hideToolTip(d)
+        })
+        .transition().duration(this.speed) // start at "y=0" then transition to the top of the grpah while the height increases
+        .attr("y", function(d) {
+          return that.yScale(d.x)
+        })
+        .attr("height", 0.90 * (this.height - 2 * this.padding) / this.data.length)
+        .attr("width", function(d) {
+          return that.xScale(d.y) ;
+        })
+        .attr("fill", function(d) {
+          return that.colorScale(d.x)
+        });
+
+  }
 
 };
 
@@ -208,50 +271,47 @@ Bar_Graph.prototype.updateData = function() {
 };
 
 Bar_Graph.prototype.showToolTip = function(d) {
-  //div tooltip
-  /*
-   this.tooltipNode =d3.select("body").append("div")
-     .html( d.x+"  |  "+"Value:"+d.y)
-     .style("position","absolute")
-     //.style("width", "60px")
-     //.style("height", "28px")
-     .style("padding", "5px")
-     .style("background", "lightgray")
-     .style("border-radius","8px")
-     .style("pointer-events","none")
-     .style("left",this.xScale(d.x)+2*this.padding+"px")
-     .style("top",this.yScale(d.y) +"px")
-     .style("opacity",0)
-
-   this.tooltipNode
-     .transition().duration(500)
-     .style("opacity",0.9)
-
-  */
 
   if (this.tooltipNode != undefined) {
     this.tooltipNode.remove()
   };
 
   this.tooltipNode = this.plot.append("g")
-    .attr("transform", "translate(" + (this.xScale(d.x) * 1 + 5) + "," + (this.yScale(d.y) * 1 - 10) + ")")
-    .style("opacity", 0)
+
+
+  this.tooltipNode.append("text")
+    .attr("id","tooltiptext")
+    .attr("opacity",1)
+    .attr("x", "0.5em")
+    .text(d.x + " | "+ d.y );
+
+  var text_width = d3.select("#tooltiptext").node().getComputedTextLength()+15;
+  if(this.orientation == 'vertical'){
+
+    this.tooltipNode
+      .attr("transform", "translate(" + (this.xScale(d.x) * 1 + 5) + "," + (this.yScale(d.y) * 1 - 10) + ")")
+      .style("opacity", 0);
+  }else if(this.orientation == 'horizontal'){
+    this.tooltipNode
+      .attr("transform", "translate(" + Math.min(this.xScale(d.y)+5,this.xScale(d.y)+5-text_width) + "," + (this.yScale(d.x) * 1 - 10) + ")")
+      .style("opacity", 0);
+
+  };
 
   this.tooltipNode
     .append("rect")
-    .attr("width", String(d.x + " | Value:" + d.y).length * 8.2) //8.2 as a proxy of char length to calculate tooltip box width
+    .attr("width", text_width)
     .attr("height", "1.6em")
     .attr("y", "-1.25em")
     .attr("fill", "lightgray")
     .attr("rx", 4)
     .style("pointer-events", "none");
 
-
   this.tooltipNode.append("text")
     .attr("x", "0.5em")
-    .style("opacity", 0.9)
+    .style("opacity",0.9)
     .style("background", "lightgray")
-    .text(d.x + " | Value:" + d.y);
+    .text(d.x + " | "+ d.y +"mm");
 
   this.tooltipNode
     .transition().duration(200)
@@ -262,7 +322,7 @@ Bar_Graph.prototype.showToolTip = function(d) {
 Bar_Graph.prototype.hideToolTip = function() {
   var that = this;
   that.tooltipNode.remove();
-}
+};
 
 Bar_Graph.prototype.generateButtons = function() {
   var that = this;
@@ -276,12 +336,57 @@ Bar_Graph.prototype.generateButtons = function() {
     .on("click", function() {
       that.removeData()
     });
+  d3.select(".button-container").append("button")
+    .text("Sort asc")
+    .on("click", function() {
+      that.sortAsc()
+    });
+  d3.select(".button-container").append("button")
+    .text("Sort desc")
+    .on("click", function() {
+      that.sortDesc()
+    });
+  d3.select(".button-container").append("button")
+    .text("Rotate Chart")
+    .on("click", function() {
+      that.rotateChart()
+    });
 
 
-}
+
+};
 
 Bar_Graph.prototype.removeData = function() {
   this.data.pop();
   this.updateBars();
+
+};
+
+Bar_Graph.prototype.sortAsc = function(){
+  this.data.sort(function(a,b){
+    return a.y-b.y;
+  });
+  this.updateBars();
+
+
+};
+
+Bar_Graph.prototype.sortDesc = function(){
+  this.data.sort(function(a,b){
+    return b.y-a.y;
+  });
+  this.updateBars();
+
+
+};
+
+Bar_Graph.prototype.rotateChart= function(){
+  if(this.orientation=='vertical'){
+    this.orientation='horizontal';
+  }else{
+    this.orientation='vertical';
+  };
+  this.updateBars();
+
 
 };
