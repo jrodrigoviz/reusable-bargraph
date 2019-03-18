@@ -2,55 +2,31 @@
 ///reusable code starts here
 ////////////////////////////////////
 
-var Bar_Graph = function(opt,orientation='vertical') {
+var Bar_Graph = function(opt) {
   this.data = opt.data;
   this.element = opt.element;
-  this.orientation = orientation;
-  this.speed = 1000;
-  this.colorPalette = [{
-      "color": "#17becf"
-    },
-    {
-      "color": "#bcbd22"
-    },
-    {
-      "color": "#7f7f7f"
-    },
-    {
-      "color": "#e377c2"
-    },
-    {
-      "color": "#8c564b"
-    },
-    {
-      "color": "#9467bd"
-    },
-    {
-      "color": "#d62728"
-    },
-    {
-      "color": "#2ca02c"
-    },
-    {
-      "color": "#ff7f0e"
-    },
-    {
-      "color": "#1f77b4"
-    }
-  ]
+  this.orientation = opt.orientation;
+  this.width = opt.width;
+  this.height = opt.height;
+  this.padding = opt.padding;
+  this.speed = opt.speed;
+  this.optionalColorPalette = opt.colorPalette;
+  this.xTicksNum = opt.xTicksNum;
+  this.yTicksNum = opt.yTicksNum;
+  this.barPaddingInner = opt.barPaddingInner;
+  this.fontSize = opt.fontSize;
   this.draw();
-}
+};
+
 
 
 Bar_Graph.prototype.draw = function() {
   this.padding = 50;
-  this.width = 1000;
-  this.height = 500;
 
   var svg = d3.select(this.element).append('svg')
-    .attr('width', this.width)
-    .attr('height', this.height)
-    .attr('padding', this.padding)
+  .attr("padding",this.padding)
+  .attr('viewBox',"0 0 "+this.width+" "+this.height)
+  .attr("preserveAspectRatio","xMinYMin")
 
   this.plot = svg.append('g')
     .attr('class', 'Bar_Graph_holder')
@@ -73,6 +49,7 @@ Bar_Graph.prototype.generateXScale = function() {
       return d.x;
     }))
     .range([0, this.width - 2 * this.padding])
+    .paddingInner(this.barPaddingInner)
   }else if (this.orientation=='horizontal'){
   this.xScale = d3.scaleLinear()
     .domain([0,d3.max(this.data,function(d){
@@ -81,7 +58,7 @@ Bar_Graph.prototype.generateXScale = function() {
     .range([0, this.width - 2 * this.padding])
   };
 
-  this.xAxis = d3.axisBottom().scale(this.xScale);
+  this.xAxis = d3.axisBottom().ticks(this.xTicksNum).scale(this.xScale);
 };
 
 Bar_Graph.prototype.generateYScale = function() {
@@ -96,12 +73,70 @@ Bar_Graph.prototype.generateYScale = function() {
     .domain(this.data.map(function(d) {
       return d.x;
     }))
-    .range([this.height - 2 * this.padding, 0]);
+    .range([this.height - 2 * this.padding, 0])
+    .paddingInner(this.barPaddingInner);
 }
-    this.yAxis = d3.axisLeft().scale(this.yScale);
+    this.yAxis = d3.axisLeft().ticks(this.yTicksNum).scale(this.yScale);
 };
 
 Bar_Graph.prototype.generateColorScale = function() {
+
+  var that=this;
+
+  this.colorPalette = [
+    {
+      "key":1,
+      "color": "#1f77b4"
+    },
+    {
+      "key":2,
+      "color": "#ff7f0e"
+    },
+    {
+      "key":3,
+      "color": "#2ca02c"
+    },
+    {
+      "key":4,
+      "color": "#9467bd"
+    },
+    {
+      "key":5,
+      "color": "#8c564b"
+    },
+    {
+      "key":6,
+      "color": "#e377c2"
+    },
+    {
+      "key":7,
+      "color": "#7f7f7f"
+    },
+    {
+      "key":8,
+      "color": "#bcbd22"
+    },
+    {
+      "key":9,
+      "color": "#17becf"
+    }
+  ];
+
+    this.optionalColorPalette.map(function(d){
+      var curKey = d.key;
+      var curColor = d.color;
+
+      that.colorPalette.map(function(d){
+        if(d.key == curKey){
+          d.color = curColor;
+        }
+      }
+      )
+
+    });
+
+
+
   this.colorScale = d3.scaleOrdinal()
     .domain(this.data.map(function(d) {
       return d.x;
@@ -156,7 +191,7 @@ Bar_Graph.prototype.generateBars = function() {
       var that = this;
 
       var rect = this.plot.selectAll("rect")
-        .data(this.data);
+        .data(this.data,function(d){return d.x});
 
       //remove any elements that don't have data
       rect.exit().remove();
@@ -164,6 +199,33 @@ Bar_Graph.prototype.generateBars = function() {
       //update elements that do have Data
       rect
         .transition().duration(this.speed)
+        .attr("x", function(d) {
+          return that.xScale(d.x);
+        })
+        .attr("y", function(d) {
+          return that.yScale(d.y);
+        })
+        .attr("height", function(d) {
+          return that.height - that.yScale(d.y) - 2 * that.padding;
+        })
+        .attr("width", this.xScale.bandwidth())
+
+      //create new elements for data that is new
+      rect.enter().append("rect")
+        .attr("x", function(d) {
+          return that.xScale(d.x);
+        })
+        .attr("y", function(d){
+          return that.height-2*that.padding;
+        })
+        .attr("width", this.xScale.bandwidth())
+        .on("mouseover", function(d) {
+          that.showToolTip(d)
+        })
+        .on("mouseout", function(d) {
+          that.hideToolTip(d)
+        })
+        .transition().duration(this.speed) // start at "y=0" then transition to the top of the grpah while the height increases
         .attr("x", function(d) {
           return that.xScale(d.x)
         })
@@ -173,37 +235,17 @@ Bar_Graph.prototype.generateBars = function() {
         .attr("height", function(d) {
           return that.height - that.yScale(d.y) - 2 * that.padding;
         })
-        .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
-        .attr("fill", function(d) {
-          return that.colorScale(d.x)
-        })
-
-      //create new elements for data that is new
-      rect.enter().append("rect")
-        .attr("x", 0)
-        .attr("y", 0)
-        .on("mouseover", function(d) {
-          that.showToolTip(d)
-        })
-        .on("mouseout", function(d) {
-          that.hideToolTip(d)
-        })
-        .transition().duration(this.speed) // start at "y=0" then transition to the top of the grpah while the height increases
-        .attr("y", function(d) {
-          return that.yScale(d.y)
-        })
-        .attr("height", function(d) {
-          return that.height - that.yScale(d.y) - 2 * that.padding;
-        })
-        .attr("width", 0.90 * (this.width - 2 * this.padding) / this.data.length)
+        .attr("width", this.xScale.bandwidth())
         .attr("fill", function(d) {
           return that.colorScale(d.x)
         });
+
+
     }else if (this.orientation =='horizontal'){
       var that = this;
 
       var rect = this.plot.selectAll("rect")
-        .data(this.data);
+        .data(this.data,function(d){return d.x});
 
       //remove any elements that don't have data
       rect.exit().remove();
@@ -215,11 +257,10 @@ Bar_Graph.prototype.generateBars = function() {
         .attr("y", function(d) {
           return that.yScale(d.x)
         })
-        .attr("height", 0.90 * (this.height - 2 * this.padding) / this.data.length)
+        .attr("height",this.yScale.bandwidth())
         .attr("width", function(d){
         return that.xScale(d.y);
         })
-        .attr("fill", function(d) {
           return that.colorScale(d.x)
         })
 
@@ -263,8 +304,8 @@ Bar_Graph.prototype.updateBars = function() {
 
 Bar_Graph.prototype.updateData = function() {
   var newEntry = {
-    x: "A" + Math.floor(Math.random() * 100),
-    y: Math.floor(Math.random() * 100)
+    x: "A" + Math.floor(Math.random() * 10000),
+    y: Math.floor(Math.random()*100)
   };
   this.data.push(newEntry);
   this.updateBars();

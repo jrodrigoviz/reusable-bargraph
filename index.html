@@ -7,9 +7,9 @@
   <script src="https://d3js.org/d3.v5.min.js"></script>
   <script type="text/javascript" src="d3_barGraph.js"></script>
 
-
+</head>
   <body>
-    <div class="chart-container" style="max-width: 1000px;"></div>
+    <div class="chart-container" id ="barChart-container" style="max-width: 1000px;"></div>
     <div class="button-container"></div>
   </body>
 
@@ -45,8 +45,19 @@
           "y": 3
         }
       ],
-      element: document.querySelector('.chart-container'),
-    },'horizontal');
+    element: document.querySelector('#barChart-container'),
+    orientation:'horizontal',
+    width:500,
+    height:500,
+    padding:50,
+    speed:1000,
+    colorPalette:[],
+    xTicksNum:10,
+    yTicksNum:10,
+    barPaddingInner:0.1
+
+
+  });
   </script>
 
 
