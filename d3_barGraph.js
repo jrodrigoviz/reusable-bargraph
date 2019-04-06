@@ -261,8 +261,6 @@ Bar_Graph.prototype.generateBars = function() {
         .attr("width", function(d){
         return that.xScale(d.y);
         })
-          return that.colorScale(d.x)
-        })
 
       //create new elements for data that is new
       rect.enter().append("rect")
@@ -270,6 +268,7 @@ Bar_Graph.prototype.generateBars = function() {
         .attr("y", function(d) {
           return that.yScale(d.x) + 5
         })
+        .attr("height",this.yScale.bandwidth())
         .on("mouseover", function(d) {
           that.showToolTip(d)
         })
@@ -280,7 +279,7 @@ Bar_Graph.prototype.generateBars = function() {
         .attr("y", function(d) {
           return that.yScale(d.x)
         })
-        .attr("height", 0.90 * (this.height - 2 * this.padding) / this.data.length)
+        .attr("height",this.yScale.bandwidth())
         .attr("width", function(d) {
           return that.xScale(d.y) ;
         })
